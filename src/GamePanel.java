@@ -8,8 +8,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.LinkedList;
 
 public class GamePanel extends JPanel implements ActionListener {
     // Game variables and parameters
@@ -20,7 +22,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private int gameSpeed = 100;
     private int scoreCounter;
 
-    private Point[] snake;
+    private LinkedList<Point> snake;
     private Point applePosition = new Point();
     private final JLabel scoreLabel = new JLabel("Your score: " + scoreCounter);
     private final Timer timer = new Timer(gameSpeed, this);
@@ -32,7 +34,6 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean isNeedToAskSaveScore = true;
 
     private Color appleColor;
-    private Color snakeHeadColor;
     private Color snakeBodyColor;
     private Color textColor;
 
@@ -128,7 +129,6 @@ public class GamePanel extends JPanel implements ActionListener {
         if (theme == Theme.DARK) {
             setBackground(Color.black);
             appleColor = Color.green;
-            snakeHeadColor = Color.red;
             snakeBodyColor = Color.yellow;
             textColor = Color.white;
         }
@@ -136,7 +136,6 @@ public class GamePanel extends JPanel implements ActionListener {
             Color customBlack = new Color(43, 51, 26);
             setBackground(new Color(169, 203, 102));
             appleColor = Color.yellow;
-            snakeHeadColor = Color.red;
             snakeBodyColor = customBlack;
             textColor = customBlack;
         }
@@ -179,21 +178,12 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void drawSnake(Graphics g) {
-        for (int i = 0; i < snake.length; i++) {
-            if (snake[i] != null) {
-                if (i == 0) {
-                    g.setColor(snakeHeadColor);
-                    g.fillOval(snake[i].x, snake[i].y, cellSize, cellSize);
-                    g.setColor(snakeBodyColor);
-                } else {
-                    g.fillOval(snake[i].x, snake[i].y, cellSize, cellSize);
-                }
-            }
-        }
+        g.setColor(snakeBodyColor);
+        snake.forEach(point -> g.fillOval(point.x, point.y, cellSize, cellSize));
     }
 
     private void drawMessage(Graphics g, String message) {
-        Font font = new Font("SAN_SERIF", Font.BOLD, 30);
+        Font font = new Font("Courier New", Font.BOLD, 25);
         FontMetrics fontMetrics = getFontMetrics(font);
 
         g.setColor(textColor);
@@ -225,7 +215,7 @@ public class GamePanel extends JPanel implements ActionListener {
         isFirstGame = false;
         inGame = true;
         isNeedToAskSaveScore = true;
-        snake = new Point[numberOfCells * numberOfCells];
+        snake = new LinkedList<>();
         locateApplePosition();
         locateSnakeInitialPosition();
         if (timer.isRunning()) {
@@ -254,38 +244,34 @@ public class GamePanel extends JPanel implements ActionListener {
     private void moveSnake() {
         // Determines snake head new position, depending on current snake movement direction.
         Point snakeHeadNewPoint = new Point();
+        Point snakeHeadCurrentPoint = snake.getFirst();
         switch (currentSnakeDirection) {
             case RIGHT:
-                snakeHeadNewPoint.x = checkSnakePointCoordinateToBeInBounds(snake[0].x + cellSize);
-                snakeHeadNewPoint.y = snake[0].y;
+                snakeHeadNewPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadCurrentPoint.x + cellSize);
+                snakeHeadNewPoint.y = snakeHeadCurrentPoint.y;
                 break;
             case LEFT:
-                snakeHeadNewPoint.x = checkSnakePointCoordinateToBeInBounds(snake[0].x - cellSize);
-                snakeHeadNewPoint.y = snake[0].y;
+                snakeHeadNewPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadCurrentPoint.x - cellSize);
+                snakeHeadNewPoint.y = snakeHeadCurrentPoint.y;
                 break;
             case UP:
-                snakeHeadNewPoint.x = snake[0].x;
-                snakeHeadNewPoint.y = checkSnakePointCoordinateToBeInBounds(snake[0].y - cellSize);
+                snakeHeadNewPoint.x = snakeHeadCurrentPoint.x;
+                snakeHeadNewPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadCurrentPoint.y - cellSize);
                 break;
             case DOWN:
-                snakeHeadNewPoint.x = snake[0].x;
-                snakeHeadNewPoint.y = checkSnakePointCoordinateToBeInBounds(snake[0].y + cellSize);
+                snakeHeadNewPoint.x = snakeHeadCurrentPoint.x;
+                snakeHeadNewPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadCurrentPoint.y + cellSize);
                 break;
         }
 
         // Moves all points of snake from position i to position i + 1, to the first position placed snake's head new point.
         // If there is no need to add new point to snake's body, point in last position removes.
-        System.arraycopy(snake, 0, snake, 1, snake.length - 1);
+        snake.addFirst(snakeHeadNewPoint);
         if (!isSnakeBodyNeededToBeIncreased) {
-            for (int i = 0; i < snake.length; i++) {
-                if (snake[i] != null && snake[i + 1] == null) {
-                    snake[i] = null;
-                }
-            }
+            snake.removeLast();
         } else {
             isSnakeBodyNeededToBeIncreased = false;
         }
-        snake[0] = snakeHeadNewPoint;
     }
 
     /*
@@ -305,7 +291,7 @@ public class GamePanel extends JPanel implements ActionListener {
     
     private void locateSnakeInitialPosition() {
         Point snakeInitialPositionPoint = locateRandomPositionPoint();
-        snake[0] = snakeInitialPositionPoint;
+        snake.add(snakeInitialPositionPoint);
 
         int snakeInitialDirection = (int)(Math.random() * 4);
         switch (snakeInitialDirection) {
@@ -325,20 +311,21 @@ public class GamePanel extends JPanel implements ActionListener {
 
         for (int i = 1; i < snakeInitialSize; i++) {
             Point snakeBodyPoint = new Point();
+            Point snakeHeadPoint = snake.getFirst();
             if (currentSnakeDirection.equals(Direction.UP)) {
-                snakeBodyPoint.x = snake[0].x;
-                snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snake[0].y + i * cellSize);
+                snakeBodyPoint.x = snakeHeadPoint.x;
+                snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.y + i * cellSize);
             } else if(currentSnakeDirection.equals(Direction.DOWN)) {
-                snakeBodyPoint.x = snake[0].x;
-                snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snake[0].y - i * cellSize);
+                snakeBodyPoint.x = snakeHeadPoint.x;
+                snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.y - i * cellSize);
             } else if(currentSnakeDirection.equals(Direction.LEFT)) {
-                snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snake[0].x + i * cellSize);
-                snakeBodyPoint.y = snake[0].y;
+                snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.x + i * cellSize);
+                snakeBodyPoint.y = snakeHeadPoint.y;
             } else {
-                snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snake[0].x - i * cellSize);
-                snakeBodyPoint.y = snake[0].y;
+                snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.x - i * cellSize);
+                snakeBodyPoint.y = snakeHeadPoint.y;
             }
-            snake[i] = snakeBodyPoint;
+            snake.add(snakeBodyPoint);
         }
     }
 
@@ -364,13 +351,12 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void checkSnakeNotDead() {
-        for (int i = 1; i < snake.length; i++) {
-            if (snake[i] != null) {
-                if (snake[0].x == snake[i].x && snake[0].y == snake[i].y) {
-                    inGame = false;
-                }
+        Point snakeHeadPoint = snake.getFirst();
+        snake.forEach(point -> {
+            if(point != snakeHeadPoint && point.equals(snakeHeadPoint)) {
+                inGame = false;
             }
-        }
+        });
     }
 
     private int checkSnakePointCoordinateToBeInBounds(int pointCoordinate) {

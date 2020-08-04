@@ -1,9 +1,23 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EventObject;
+import java.util.List;
 
 public class GameWindow extends JFrame {
     private GamePanel gamePanel;
 
     public GameWindow() {
+        Font gameFont = new Font("Courier New", Font.PLAIN, 15);
+        UIManager.put("Menu.font", gameFont);
+        UIManager.put("MenuItem.font", gameFont);
+        UIManager.put("OptionPane.messageFont", gameFont);
+
         setJMenuBar(createMenuBar());
         gamePanel = new GamePanel();
         setContentPane(gamePanel);
@@ -46,8 +60,53 @@ public class GameWindow extends JFrame {
         // Game -> View top scores
 
         JMenuItem viewTopScoresMenuItem = new JMenuItem("View top scores");
-        // JDialog + JScrollPane + JTable?
-        //viewTopScoresMenuItem.addActionListener(actionEvent -> );
+        viewTopScoresMenuItem.addActionListener(actionEvent -> {
+            JDialog scoreDialog = new JDialog();
+
+            DefaultTableModel tableModel = new DefaultTableModel();
+            tableModel.addColumn("Player");
+            tableModel.addColumn("Score");
+
+            String workingDirectory = System.getProperty("user.dir");
+            File topScoreFile = new File(workingDirectory + "/top_score.dat");
+            if (topScoreFile.exists()) {
+                try {
+                    List<String> topScoreFileData = Files.readAllLines(topScoreFile.toPath());
+                    List<UserScore> userScores = new ArrayList<>();
+                    topScoreFileData.forEach(line -> {
+                        String[] playerNameAndScore = line.split(":");
+                        userScores.add(new UserScore(Integer.parseInt(playerNameAndScore[1]), playerNameAndScore[0]));
+                    });
+                    Comparator scoreComparator = (o, t1) -> {
+                        UserScore score1 = (UserScore) o;
+                        UserScore score2 = (UserScore) t1;
+                        return Integer.compare(score2.getScore(), score1.getScore());
+                    };
+                    userScores.sort(scoreComparator);
+                    userScores.forEach(userScore -> tableModel.addRow(new Object[] {userScore.getUserName(), userScore.getScore()}));
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                }
+            }
+            JTable scoreTable = new JTable(tableModel) {
+                @Override
+                public boolean editCellAt(int row, int column, EventObject e) {
+                    return false;
+                }
+            };
+            scoreTable.getTableHeader().setResizingAllowed(false);
+            scoreTable.getTableHeader().setReorderingAllowed(false);
+
+            JScrollPane scorePanel = new JScrollPane();
+            scorePanel.setViewportView(scoreTable);
+
+            scoreDialog.setContentPane(scorePanel);
+            scoreDialog.pack();
+            scoreDialog.setBounds(new Rectangle(400, 400));
+            scoreDialog.setLocationRelativeTo(null);
+            scoreDialog.setResizable(false);
+            scoreDialog.setVisible(true);
+        });
         gameMenu.add(viewTopScoresMenuItem);
 
         // Game -> Exit
@@ -131,10 +190,14 @@ public class GameWindow extends JFrame {
 
         JMenuItem aboutGameMenuItem = new JMenuItem("Game");
         String gameControls =
-                "Controls\n" +
-                "Use arrows to control snake movement directions\n" +
-                "Press P to pause the game\n" +
-                "Press N to start new game";
+        "<html>" +
+                "Controls:" +
+                "<ul>" +
+                    "<li>Use arrows to control snake movement directions</li>" +
+                    "<li>Press P to pause the game</li>" +
+                    "<li>Press N to start new game</li>" +
+                "</ul>" +
+        "</html>";
         aboutGameMenuItem.addActionListener(actionEvent -> JOptionPane.showMessageDialog(this, gameControls,"About game", JOptionPane.INFORMATION_MESSAGE));
 
         // About -> Creators
