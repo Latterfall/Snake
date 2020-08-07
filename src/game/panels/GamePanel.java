@@ -1,28 +1,29 @@
+package game.panels;
+
+import game.model.Direction;
+import game.model.Snake;
+import game.utils.ScoreFileManager;
+import game.model.UserScore;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.LinkedList;
+import java.util.Properties;
+import static game.model.Direction.*;
 
 public class GamePanel extends JPanel implements ActionListener {
     // Game variables and parameters
 
     private final int cellSize = 10;
-    private final int snakeInitialSize = 3;
+    private int snakeInitialSize;
     private int numberOfCells = 40;
     private int gameSpeed = 100;
     private int scoreCounter;
 
-    private LinkedList<Point> snake;
     private Point applePosition = new Point();
     private final JLabel scoreLabel = new JLabel("Your score: " + scoreCounter);
     private final Timer timer = new Timer(gameSpeed, this);
@@ -41,37 +42,36 @@ public class GamePanel extends JPanel implements ActionListener {
         DARK, LIGHT
     }
 
-    private enum Direction {
-        UP, DOWN, LEFT, RIGHT
-    }
-    private Direction currentSnakeDirection;
+    //private List<Player> players;
+    private Snake snake = new Snake();
 
     private class SnakeKeyAdapter extends KeyAdapter {
         @Override
-        public void keyPressed(KeyEvent e){
+        public void keyPressed(KeyEvent e) {
             int key = e.getKeyCode();
+            Direction currentSnakeDirection = snake.currentSnakeDirection;
 
-            if(key == KeyEvent.VK_LEFT && (!currentSnakeDirection.equals(Direction.RIGHT))){
-                currentSnakeDirection = Direction.LEFT;
+            if (key == KeyEvent.VK_LEFT && (!currentSnakeDirection.equals(RIGHT))) {
+                snake.currentSnakeDirection = Direction.LEFT;
             }
 
-            if(key == KeyEvent.VK_RIGHT && (!currentSnakeDirection.equals(Direction.LEFT))){
-                currentSnakeDirection = Direction.RIGHT;
+            if (key == KeyEvent.VK_RIGHT && (!currentSnakeDirection.equals(Direction.LEFT))) {
+                snake.currentSnakeDirection = RIGHT;
             }
 
-            if(key == KeyEvent.VK_UP && (!currentSnakeDirection.equals(Direction.DOWN))){
-                currentSnakeDirection = Direction.UP;
+            if (key == KeyEvent.VK_UP && (!currentSnakeDirection.equals(Direction.DOWN))) {
+                snake.currentSnakeDirection = Direction.UP;
             }
 
-            if(key == KeyEvent.VK_DOWN && (!currentSnakeDirection.equals(Direction.UP))){
-                currentSnakeDirection = Direction.DOWN;
+            if (key == KeyEvent.VK_DOWN && (!currentSnakeDirection.equals(Direction.UP))) {
+                snake.currentSnakeDirection = Direction.DOWN;
             }
 
-            if(key == KeyEvent.VK_N) {
+            if (key == KeyEvent.VK_N) {
                 startGame();
             }
 
-            if(key == KeyEvent.VK_P) {
+            if (key == KeyEvent.VK_P) {
                 pauseGame();
             }
         }
@@ -90,6 +90,14 @@ public class GamePanel extends JPanel implements ActionListener {
     // Constructors
 
     public GamePanel() {
+        try {
+            Properties properties = new Properties();
+            properties.load(new FileInputStream(System.getProperty("user.dir") + "/game.properties"));
+            snakeInitialSize = Integer.parseInt(properties.getProperty("snakeInitialSize"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         addKeyListener(new SnakeKeyAdapter());
         setFocusable(true);
         setBackground(Color.black);
@@ -179,7 +187,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void drawSnake(Graphics g) {
         g.setColor(snakeBodyColor);
-        snake.forEach(point -> g.fillOval(point.x, point.y, cellSize, cellSize));
+        snake.snakeBodyPoints.forEach(point -> g.fillOval(point.x, point.y, cellSize, cellSize));
     }
 
     private void drawMessage(Graphics g, String message) {
@@ -215,7 +223,7 @@ public class GamePanel extends JPanel implements ActionListener {
         isFirstGame = false;
         inGame = true;
         isNeedToAskSaveScore = true;
-        snake = new LinkedList<>();
+        snake = new Snake();
         locateApplePosition();
         locateSnakeInitialPosition();
         if (timer.isRunning()) {
@@ -244,8 +252,8 @@ public class GamePanel extends JPanel implements ActionListener {
     private void moveSnake() {
         // Determines snake head new position, depending on current snake movement direction.
         Point snakeHeadNewPoint = new Point();
-        Point snakeHeadCurrentPoint = snake.getFirst();
-        switch (currentSnakeDirection) {
+        Point snakeHeadCurrentPoint = snake.snakeBodyPoints.getFirst();
+        switch (snake.currentSnakeDirection) {
             case RIGHT:
                 snakeHeadNewPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadCurrentPoint.x + cellSize);
                 snakeHeadNewPoint.y = snakeHeadCurrentPoint.y;
@@ -266,9 +274,9 @@ public class GamePanel extends JPanel implements ActionListener {
 
         // Moves all points of snake from position i to position i + 1, to the first position placed snake's head new point.
         // If there is no need to add new point to snake's body, point in last position removes.
-        snake.addFirst(snakeHeadNewPoint);
+        snake.snakeBodyPoints.addFirst(snakeHeadNewPoint);
         if (!isSnakeBodyNeededToBeIncreased) {
-            snake.removeLast();
+            snake.snakeBodyPoints.removeLast();
         } else {
             isSnakeBodyNeededToBeIncreased = false;
         }
@@ -288,44 +296,44 @@ public class GamePanel extends JPanel implements ActionListener {
     private void locateApplePosition() {
         applePosition = locateRandomPositionPoint();
     }
-    
+
     private void locateSnakeInitialPosition() {
         Point snakeInitialPositionPoint = locateRandomPositionPoint();
-        snake.add(snakeInitialPositionPoint);
+        snake.snakeBodyPoints.add(snakeInitialPositionPoint);
 
-        int snakeInitialDirection = (int)(Math.random() * 4);
+        int snakeInitialDirection = (int) (Math.random() * 4);
         switch (snakeInitialDirection) {
             case 0:
-                currentSnakeDirection = Direction.UP;
+                snake.currentSnakeDirection = Direction.UP;
                 break;
             case 1:
-                currentSnakeDirection = Direction.DOWN;
+                snake.currentSnakeDirection = Direction.DOWN;
                 break;
             case 2:
-                currentSnakeDirection = Direction.LEFT;
+                snake.currentSnakeDirection = Direction.LEFT;
                 break;
             case 3:
-                currentSnakeDirection = Direction.RIGHT;
+                snake.currentSnakeDirection = RIGHT;
                 break;
         }
 
         for (int i = 1; i < snakeInitialSize; i++) {
             Point snakeBodyPoint = new Point();
-            Point snakeHeadPoint = snake.getFirst();
-            if (currentSnakeDirection.equals(Direction.UP)) {
+            Point snakeHeadPoint = snake.snakeBodyPoints.getFirst();
+            if (snake.currentSnakeDirection.equals(Direction.UP)) {
                 snakeBodyPoint.x = snakeHeadPoint.x;
                 snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.y + i * cellSize);
-            } else if(currentSnakeDirection.equals(Direction.DOWN)) {
+            } else if (snake.currentSnakeDirection.equals(Direction.DOWN)) {
                 snakeBodyPoint.x = snakeHeadPoint.x;
                 snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.y - i * cellSize);
-            } else if(currentSnakeDirection.equals(Direction.LEFT)) {
+            } else if (snake.currentSnakeDirection.equals(Direction.LEFT)) {
                 snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.x + i * cellSize);
                 snakeBodyPoint.y = snakeHeadPoint.y;
             } else {
                 snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.x - i * cellSize);
                 snakeBodyPoint.y = snakeHeadPoint.y;
             }
-            snake.add(snakeBodyPoint);
+            snake.snakeBodyPoints.add(snakeBodyPoint);
         }
     }
 
@@ -339,7 +347,7 @@ public class GamePanel extends JPanel implements ActionListener {
     // Logic methods - Checking methods
 
     private void checkIsAppleEaten() {
-        for (Point point : snake) {
+        for (Point point : snake.snakeBodyPoints) {
             if (point != null) {
                 if (point.x == applePosition.x && point.y == applePosition.y) {
                     locateApplePosition();
@@ -351,9 +359,9 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void checkSnakeNotDead() {
-        Point snakeHeadPoint = snake.getFirst();
-        snake.forEach(point -> {
-            if(point != snakeHeadPoint && point.equals(snakeHeadPoint)) {
+        Point snakeHeadPoint = snake.snakeBodyPoints.getFirst();
+        snake.snakeBodyPoints.forEach(point -> {
+            if (point != snakeHeadPoint && point.equals(snakeHeadPoint)) {
                 inGame = false;
             }
         });
@@ -370,29 +378,22 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void saveResult() {
         isNeedToAskSaveScore = false;
-       int answer = JOptionPane.showConfirmDialog(
-               this,
-               "Want to save your score?",
-               "Saving score",
-               JOptionPane.YES_NO_OPTION);
-       if (answer == JOptionPane.YES_OPTION) {
-           try {
-               String userName = JOptionPane.showInputDialog(this, "Enter your name", "Enter your name", JOptionPane.PLAIN_MESSAGE);
-               if (userName.equals("")) {
-                   userName = "Unnamed player";
-               }
-               String workingDirectory = System.getProperty("user.dir");
-               File topScoreFile = new File(workingDirectory + "/top_score.dat");
-               String userNameAndScore = userName + ":" + scoreCounter + "\n";
-               if (!topScoreFile.exists()) {
-                   topScoreFile.createNewFile();
-               }
-               Files.write(Paths.get(topScoreFile.toURI()), userNameAndScore.getBytes(), StandardOpenOption.APPEND);
-           } catch (FileNotFoundException e) {
-               e.printStackTrace();
-           } catch (IOException exception) {
-               exception.printStackTrace();
-           }
-       }
+        int answer = JOptionPane.showConfirmDialog(
+                this,
+                "Want to save your score?",
+                "Saving score",
+                JOptionPane.YES_NO_OPTION);
+        if (answer == JOptionPane.YES_OPTION) {
+            String userName = JOptionPane.showInputDialog(
+                    this,
+                    "Enter your name",
+                    "Enter your name",
+                    JOptionPane.PLAIN_MESSAGE);
+            if (userName.isEmpty()) {
+                userName = "Unnamed player";
+            }
+            ScoreFileManager scoreFileManager = ScoreFileManager.getInstance();
+            scoreFileManager.saveScore(new UserScore(userName, scoreCounter));
+        }
     }
 }
