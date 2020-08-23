@@ -1,7 +1,7 @@
-package game.windows.dialog;
+package game.dialog;
 
 import game.model.UserScore;
-import game.utils.ScoreFileManager;
+import game.logic.ScoreFileManager;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;

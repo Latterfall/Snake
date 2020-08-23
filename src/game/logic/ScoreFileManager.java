@@ -1,4 +1,4 @@
-package game.utils;
+package game.logic;
 
 import game.model.UserScore;
 import java.io.IOException;

@@ -1,24 +1,35 @@
-package game.windows;
+package game.frames;
 
+import game.logic.GameLogicManager;
+import game.logic.GameSettings;
 import game.panels.GamePanel;
-import game.utils.MultiplayerConnectionManager;
-import game.windows.dialog.TopScoresDialogWindow;
+import game.logic.MultiplayerConnectionManager;
+import game.dialog.TopScoresDialogWindow;
 import javax.swing.*;
 import java.awt.*;
 
-public class GameWindow extends JFrame {
+public class GameFrameWindow extends JFrame {
     private final GamePanel gamePanel;
+    private final GameLogicManager gameLogicManager;
 
-    public GameWindow() {
+    public GameFrameWindow() {
         Font gameFont = new Font("Courier New", Font.PLAIN, 15);
         UIManager.put("Menu.font", gameFont);
         UIManager.put("MenuItem.font", gameFont);
         UIManager.put("OptionPane.messageFont", gameFont);
 
         setJMenuBar(createMenuBar());
-        gamePanel = new GamePanel();
+
+        GameSettings gameSettings = new GameSettings();
+
+        gamePanel = new GamePanel(gameSettings);
         setContentPane(gamePanel);
         pack();
+
+        gameLogicManager = new GameLogicManager(gameSettings);
+        gameLogicManager.setGamePanel(gamePanel);
+
+        gamePanel.setGameLogicManager(gameLogicManager);
 
         setTitle("Snake the game");
         setLocationRelativeTo(null);
@@ -45,13 +56,13 @@ public class GameWindow extends JFrame {
         // Game -> New game
 
         JMenuItem newGameMenuItem = new JMenuItem("New game");
-        newGameMenuItem.addActionListener(actionEvent -> gamePanel.startGame());
+        newGameMenuItem.addActionListener(actionEvent -> gameLogicManager.startGame());
         gameMenu.add(newGameMenuItem);
 
         // Game -> Pause game
 
         JMenuItem pauseGameMenuItem = new JMenuItem("Pause game");
-        pauseGameMenuItem.addActionListener(actionEvent -> gamePanel.pauseGame());
+        pauseGameMenuItem.addActionListener(actionEvent -> gameLogicManager.pauseGame());
         gameMenu.add(pauseGameMenuItem);
 
         // Game -> View top scores
@@ -170,6 +181,6 @@ public class GameWindow extends JFrame {
     }
 
     private void setGameSpeed(int speed) {
-        gamePanel.setGameSpeed(speed);
+        gameLogicManager.setGameSpeed(speed);
     }
 }

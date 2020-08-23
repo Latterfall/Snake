@@ -1,4 +1,4 @@
-package game.windows.dialog;
+package game.dialog;
 
 import javax.swing.*;
 import java.awt.*;

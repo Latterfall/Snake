@@ -1,4 +1,4 @@
-package game.utils;
+package game.logic;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

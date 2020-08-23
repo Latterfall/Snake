@@ -1,9 +1,7 @@
-package game;
-
-import game.windows.GameWindow;
+import game.frames.GameFrameWindow;
 
 public class SnakeTheGame {
     public static void main(String[] args) {
-        new GameWindow();
+        new GameFrameWindow();
     }
 }
