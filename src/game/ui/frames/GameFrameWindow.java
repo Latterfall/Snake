@@ -1,10 +1,10 @@
-package game.frames;
+package game.ui.frames;
 
+import game.ui.dialog.MultiplayerHostDialogWindow;
 import game.logic.GameLogicManager;
 import game.logic.GameSettings;
-import game.panels.GamePanel;
-import game.logic.MultiplayerConnectionManager;
-import game.dialog.TopScoresDialogWindow;
+import game.ui.panels.GamePanel;
+import game.ui.dialog.TopScoresDialogWindow;
 import javax.swing.*;
 import java.awt.*;
 
@@ -30,6 +30,8 @@ public class GameFrameWindow extends JFrame {
         gameLogicManager.setGamePanel(gamePanel);
 
         gamePanel.setGameLogicManager(gameLogicManager);
+
+        setIconImage(new ImageIcon(getClass().getResource("/ico.png")).getImage());
 
         setTitle("Snake the game");
         setLocationRelativeTo(null);
@@ -139,7 +141,13 @@ public class GameFrameWindow extends JFrame {
         // Multiplayer -> Host game
 
         JMenuItem hostGameMenuItem = new JMenuItem("Host game");
-        hostGameMenuItem.addActionListener(actionEvent -> new Thread(new MultiplayerConnectionManager()).start());
+        //hostGameMenuItem.addActionListener(actionEvent -> new Thread(new MultiplayerConnectionManager()).start());
+        hostGameMenuItem.addActionListener(actionEvent -> {
+            JOptionPane.showInputDialog(
+                    this,
+                    "Enter your name");
+            new MultiplayerHostDialogWindow();
+        });
         multiplayerMenu.add(hostGameMenuItem);
 
         JMenuItem connectToTheGameMenuItem = new JMenuItem("Connect to the game");

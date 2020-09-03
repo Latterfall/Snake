@@ -1,4 +1,4 @@
-package game.model;
+package game.logic.model;
 
 import java.io.Serializable;
 import java.net.Socket;

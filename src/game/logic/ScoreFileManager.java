@@ -1,6 +1,6 @@
 package game.logic;
 
-import game.model.UserScore;
+import game.logic.model.UserScore;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +42,7 @@ public class ScoreFileManager {
 
         if (Files.exists(topScoreFile)) {
             try {
-                // Читаем все строки, разбиваем их на имя пользователя и его счёт, переводим эти данные в объекты game.model.UserScore.
+                // Читаем все строки, разбиваем их на имя пользователя и его счёт, переводим эти данные в объекты game.logic.model.UserScore.
                 List<String> topScoreFileData = Files.readAllLines(topScoreFile);
                 topScoreFileData.forEach(line -> {
                     String[] playerNameAndScore = line.split(":");

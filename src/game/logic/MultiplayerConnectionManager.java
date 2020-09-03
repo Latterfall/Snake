@@ -1,57 +1,41 @@
 package game.logic;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.Set;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class MultiplayerConnectionManager implements Runnable {
     @Override
     public void run() {
         try {
-            Selector selector = Selector.open();
-            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.bind(new InetSocketAddress("localhost", 8546));
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            ServerSocket serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(8546));
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-            while(true) {
-                selector.select();
-                Set<SelectionKey> selectedKeys = selector.selectedKeys();
-                Iterator<SelectionKey> iterator = selectedKeys.iterator();
-                while (iterator.hasNext()) {
-                    SelectionKey selectedKey = iterator.next();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                PrintWriter printWriter = new PrintWriter(clientSocket.getOutputStream(), true);
 
-                    if (selectedKey.isAcceptable()) {
-                        SocketChannel userChannel = serverSocketChannel.accept();
-                        userChannel.configureBlocking(false);
-                        userChannel.register(selector, SelectionKey.OP_READ);
+                printWriter.println("Howdy!");
+
+                String message;
+                while ((message  = bufferedReader.readLine()) != null) {
+                    if (message.equals("exit")) {
+                        printWriter.println("Bye!");
+                        clientSocket.close();
+                        return;
+                    } else {
+                        printWriter.println("Echo: " + message);
                     }
-
-                    if (selectedKey.isReadable()) {
-                        SocketChannel userChannel = (SocketChannel) selectedKey.channel();
-                        userChannel.read(byteBuffer);
-/*                        for (byte b : byteBuffer.array()) {
-                            if ((char) b == '\n') {
-                                System.out.println(new String(byteBuffer.array(), StandardCharsets.UTF_8));
-                            }
-                        }
-                        byteBuffer.clear();*/
-                        System.out.println(new String(byteBuffer.array(), StandardCharsets.UTF_8));
-                    }
-
-                    iterator.remove();
                 }
             }
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+
     }
 }

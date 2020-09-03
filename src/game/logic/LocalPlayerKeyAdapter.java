@@ -1,10 +1,10 @@
 package game.logic;
 
-import game.model.Direction;
-import game.model.Snake;
+import game.logic.model.Direction;
+import game.logic.model.Snake;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import static game.model.Direction.RIGHT;
+import static game.logic.model.Direction.RIGHT;
 
 public class LocalPlayerKeyAdapter extends KeyAdapter {
     private GameLogicManager gameLogicManager;
@@ -16,7 +16,7 @@ public class LocalPlayerKeyAdapter extends KeyAdapter {
     @Override
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
-        Snake snake = gameLogicManager.getSnake();
+        Snake snake = gameLogicManager.getLocalSnake();
 
         if (snake != null) {
             Direction currentSnakeDirection = snake.currentSnakeDirection;

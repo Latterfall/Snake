@@ -1,6 +1,6 @@
-package game.dialog;
+package game.ui.dialog;
 
-import game.model.UserScore;
+import game.logic.model.UserScore;
 import game.logic.ScoreFileManager;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

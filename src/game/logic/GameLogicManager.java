@@ -1,14 +1,18 @@
 package game.logic;
 
-import game.model.Direction;
-import game.model.Snake;
-import game.model.UserScore;
-import game.panels.GamePanel;
+import game.logic.model.Direction;
+import game.logic.model.Snake;
+import game.logic.model.UserScore;
+import game.ui.panels.GamePanel;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import static game.model.Direction.*;
+import static game.logic.model.Direction.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class GameLogicManager implements ActionListener {
     // Game variables and properties
@@ -26,7 +30,9 @@ public class GameLogicManager implements ActionListener {
 
     private Point applePosition;
     private final Timer timer;
-    private Snake snake;
+
+    private Snake localSnake;
+    private List<Snake> otherPlayersSnakes;
 
     // Constructors
 
@@ -72,8 +78,12 @@ public class GameLogicManager implements ActionListener {
         return applePosition;
     }
 
-    public Snake getSnake() {
-        return snake;
+    public Snake getLocalSnake() {
+        return localSnake;
+    }
+
+    public List<Snake> getOtherPlayersSnakes() {
+        return otherPlayersSnakes;
     }
 
     // Setters
@@ -84,6 +94,10 @@ public class GameLogicManager implements ActionListener {
 
     public void setGameSpeed(int gameSpeed) {
         timer.setDelay(gameSpeed);
+    }
+
+    public void setOtherPlayersSnakes(List<Snake> otherPlayersSnakes) {
+        this.otherPlayersSnakes = otherPlayersSnakes;
     }
 
     // Logic methods
@@ -110,7 +124,24 @@ public class GameLogicManager implements ActionListener {
         isFirstGame = false;
         isInGame = true;
         isNeedToAskSaveScore = true;
-        snake = new Snake();
+        localSnake = new Snake();
+
+        Snake internetPlayer1Snake = new Snake();
+        internetPlayer1Snake.snakeBodyPoints.addAll(Arrays.asList(
+                new Point(10, 10),
+                new Point(10, 20),
+                new Point(10, 30)));
+        Snake internetPlayer2Snake = new Snake();
+        internetPlayer2Snake.snakeBodyPoints.addAll(Arrays.asList(
+                new Point(30, 10),
+                new Point(30, 20),
+                new Point(30, 30)));
+        otherPlayersSnakes = new ArrayList<>();
+        otherPlayersSnakes.addAll(Arrays.asList(
+                internetPlayer1Snake,
+                internetPlayer2Snake
+        ));
+
         locateApplePosition();
         locateSnakeInitialPosition();
         if (timer.isRunning()) {
@@ -139,9 +170,9 @@ public class GameLogicManager implements ActionListener {
     private void moveSnake() {
         // Determines snake head new position, depending on current snake movement direction.
         Point snakeHeadNewPoint = new Point();
-        Point snakeHeadCurrentPoint = snake.snakeBodyPoints.getFirst();
+        Point snakeHeadCurrentPoint = localSnake.snakeBodyPoints.getFirst();
         int cellSize = gameSettings.getCellSize();
-        switch (snake.currentSnakeDirection) {
+        switch (localSnake.currentSnakeDirection) {
             case RIGHT:
                 snakeHeadNewPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadCurrentPoint.x + cellSize);
                 snakeHeadNewPoint.y = snakeHeadCurrentPoint.y;
@@ -162,9 +193,9 @@ public class GameLogicManager implements ActionListener {
 
         // Moves all points of snake from position i to position i + 1, to the first position placed snake's head new point.
         // If there is no need to add new point to snake's body, point in last position removes.
-        snake.snakeBodyPoints.addFirst(snakeHeadNewPoint);
+        localSnake.snakeBodyPoints.addFirst(snakeHeadNewPoint);
         if (!isSnakeBodyNeededToBeIncreased) {
-            snake.snakeBodyPoints.removeLast();
+            localSnake.snakeBodyPoints.removeLast();
         } else {
             isSnakeBodyNeededToBeIncreased = false;
         }
@@ -187,21 +218,21 @@ public class GameLogicManager implements ActionListener {
 
     private void locateSnakeInitialPosition() {
         Point snakeInitialPositionPoint = locateRandomPositionPoint();
-        snake.snakeBodyPoints.add(snakeInitialPositionPoint);
+        localSnake.snakeBodyPoints.add(snakeInitialPositionPoint);
 
         int snakeInitialDirection = (int) (Math.random() * 4);
         switch (snakeInitialDirection) {
             case 0:
-                snake.currentSnakeDirection = Direction.UP;
+                localSnake.currentSnakeDirection = Direction.UP;
                 break;
             case 1:
-                snake.currentSnakeDirection = Direction.DOWN;
+                localSnake.currentSnakeDirection = Direction.DOWN;
                 break;
             case 2:
-                snake.currentSnakeDirection = Direction.LEFT;
+                localSnake.currentSnakeDirection = Direction.LEFT;
                 break;
             case 3:
-                snake.currentSnakeDirection = RIGHT;
+                localSnake.currentSnakeDirection = RIGHT;
                 break;
         }
 
@@ -209,21 +240,21 @@ public class GameLogicManager implements ActionListener {
             int cellSize = gameSettings.getCellSize();
 
             Point snakeBodyPoint = new Point();
-            Point snakeHeadPoint = snake.snakeBodyPoints.getFirst();
-            if (snake.currentSnakeDirection.equals(Direction.UP)) {
+            Point snakeHeadPoint = localSnake.snakeBodyPoints.getFirst();
+            if (localSnake.currentSnakeDirection.equals(Direction.UP)) {
                 snakeBodyPoint.x = snakeHeadPoint.x;
                 snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.y + i * cellSize);
-            } else if (snake.currentSnakeDirection.equals(Direction.DOWN)) {
+            } else if (localSnake.currentSnakeDirection.equals(Direction.DOWN)) {
                 snakeBodyPoint.x = snakeHeadPoint.x;
                 snakeBodyPoint.y = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.y - i * cellSize);
-            } else if (snake.currentSnakeDirection.equals(Direction.LEFT)) {
+            } else if (localSnake.currentSnakeDirection.equals(Direction.LEFT)) {
                 snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.x + i * cellSize);
                 snakeBodyPoint.y = snakeHeadPoint.y;
             } else {
                 snakeBodyPoint.x = checkSnakePointCoordinateToBeInBounds(snakeHeadPoint.x - i * cellSize);
                 snakeBodyPoint.y = snakeHeadPoint.y;
             }
-            snake.snakeBodyPoints.add(snakeBodyPoint);
+            localSnake.snakeBodyPoints.add(snakeBodyPoint);
         }
     }
 
@@ -240,7 +271,7 @@ public class GameLogicManager implements ActionListener {
     // Logic methods - Checking methods
 
     private void checkIsAppleEaten() {
-        for (Point point : snake.snakeBodyPoints) {
+        for (Point point : localSnake.snakeBodyPoints) {
             if (point != null) {
                 if (point.x == applePosition.x && point.y == applePosition.y) {
                     locateApplePosition();
@@ -252,8 +283,8 @@ public class GameLogicManager implements ActionListener {
     }
 
     private void checkSnakeNotDead() {
-        Point snakeHeadPoint = snake.snakeBodyPoints.getFirst();
-        snake.snakeBodyPoints.forEach(point -> {
+        Point snakeHeadPoint = localSnake.snakeBodyPoints.getFirst();
+        localSnake.snakeBodyPoints.forEach(point -> {
             if (point != snakeHeadPoint && point.equals(snakeHeadPoint)) {
                 isInGame = false;
             }

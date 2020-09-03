@@ -1,9 +1,7 @@
 package game.logic;
 
 import java.awt.*;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Properties;
 
 public class GameSettings {
@@ -15,11 +13,7 @@ public class GameSettings {
     public GameSettings() {
         try {
             Properties properties = new Properties();
-
-            String path = Paths.get("").toAbsolutePath().toString();
-            System.out.println(path);
-
-            properties.load(new FileInputStream("src/game/logic/game.properties"));
+            properties.load(getClass().getResourceAsStream("/game.properties"));
             cellSize = Integer.parseInt(properties.getProperty("cellSize"));
             snakeInitialSize = Integer.parseInt(properties.getProperty("snakeInitialSize"));
             numberOfCells = Integer.parseInt(properties.getProperty("numberOfCells"));

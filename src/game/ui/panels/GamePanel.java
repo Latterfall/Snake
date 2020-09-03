@@ -1,10 +1,13 @@
-package game.panels;
+package game.ui.panels;
 
 import game.logic.GameLogicManager;
 import game.logic.GameSettings;
 import game.logic.LocalPlayerKeyAdapter;
+import game.logic.model.Snake;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 public class GamePanel extends JPanel {
     //private final JLabel scoreLabel = new JLabel("Your score: " + scoreCounter);
@@ -120,7 +123,14 @@ public class GamePanel extends JPanel {
     private void drawSnake(Graphics g) {
         int cellSize = gameSettings.getCellSize();
         g.setColor(snakeBodyColor);
-        gameLogicManager.getSnake().snakeBodyPoints.forEach(point -> g.fillOval(point.x, point.y, cellSize, cellSize));
+        gameLogicManager.getLocalSnake().snakeBodyPoints.forEach(point -> g.fillOval(point.x, point.y, cellSize, cellSize));
+
+        List<Snake> otherPlayersSnakesList = gameLogicManager.getOtherPlayersSnakes();
+        if (!otherPlayersSnakesList.isEmpty()) {
+            otherPlayersSnakesList.forEach(snake -> {
+                snake.snakeBodyPoints.forEach(point -> g.fillOval(point.x, point.y, cellSize, cellSize));
+            });
+        }
     }
 
     private void drawMessage(Graphics g, String message) {

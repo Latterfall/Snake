@@ -1,4 +1,4 @@
-package game.model;
+package game.logic.model;
 
 public class UserScore {
     private final int score;
